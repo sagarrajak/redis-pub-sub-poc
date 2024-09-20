@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - backend
+
+  redis-replica:
+    image: redis:latest
+    command: redis-server --slaveof redis 6379
+    networks:
+      - backend
+    depends_on:
+      - redis
+
+  haproxy:
+    image: haproxy:latest
+    ports:
+      - "8080:8080"
+      - "8404:8404"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - redis
+      - redis-replica
+    networks:
+      - backend
+      - frontend
+
+networks:
+  backend:
+  frontend:
+
+volumes:
+  redis_data:
